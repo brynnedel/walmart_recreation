@@ -8,9 +8,11 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State var searchTerm: String = "laptop"
-    @State var zipcode: Int = 27516
+    @State var zipcode: Double = 27516
 
+    @FocusState private var focused: Bool?
+    @StateObject private var vm = SearchViewModel()
+    
     var body: some View {
         NavigationStack {
             VStack (alignment: .leading) {
@@ -21,15 +23,24 @@ struct ContentView: View {
                     .overlay {
                         VStack {
                             HStack {
-                                Image(systemName: "chevron.left")
-                                    .foregroundStyle(.white)
+                                Button {} label: {
+                                    Image(systemName: "chevron.left")
+                                        .foregroundStyle(.white)
+                                        .fontWeight(.semibold)
+                                }
+                                
                                 RoundedRectangle(cornerRadius: 20)
                                     .foregroundStyle(.white)
                                     .frame(height: 40)
                                     .overlay {
                                         HStack {
                                             Image(systemName: "magnifyingglass")
-                                            Text(searchTerm)
+                                            TextField("Search", text: $vm.searchTerm)
+                                                .onSubmit {
+                                                    Task {
+                                                        await vm.loadSearch()
+                                                    }
+                                                }
                                             Spacer()
                                             Image(systemName: "barcode")
                                         }
@@ -40,23 +51,59 @@ struct ContentView: View {
                             }
                             .padding([.horizontal, .bottom])
                             HStack {
-                                Text("How do you want your items? | \(zipcode)")
+                                Text("How do you want your items? | \(String(format: "%.f", zipcode))")
                                     .foregroundStyle(.white)
                                 Spacer()
-                                Image(systemName: "chevron.down")
-                                    .foregroundStyle(.white)
+                                Button { } label: {
+                                    Image(systemName: "chevron.down")
+                                        .foregroundStyle(.white)
+                                        .fontWeight(.semibold)
+                                }
+
                             }
                             .padding(.horizontal)
                             Spacer()
                         }
+                        
                     }
-                Text("Results for \"\(searchTerm)\"")
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .padding()
+                Section {
+                    switch vm.state {
+                    case .idle:
+                        EmptyView()
+                    case .loading:
+                        loadingView
+                    case .success(let response):
+                        searchResult(response)
+                    case .error(let error):
+                        errorView(error)
+                    }
+                }
                 Spacer()
             }
         }
+    }
+    
+    @ViewBuilder
+    private func searchResult(_ products: [Product]) -> some View {
+        Text("Results for \(vm.searchTerm)")
+        ScrollView {
+            ForEach(products) { product in
+                NavigationLink {ItemView(product: product)} label: {
+                    ProductListing(product: product)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var loadingView: some View {
+        Text("Loading...")
+    }
+    
+    @ViewBuilder
+    private func errorView(_ error: Error) -> some View {
+        Text(error.localizedDescription)
     }
 }
 

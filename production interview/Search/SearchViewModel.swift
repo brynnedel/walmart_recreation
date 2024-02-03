@@ -6,3 +6,34 @@
 //
 
 import Foundation
+
+enum SearchLoadingState {
+    case idle
+    case loading
+    case success(products: [Product])
+//    case detailSuccess(TitleDetails: TitleDetails)
+    case error(error: Error)
+}
+
+@MainActor
+class SearchViewModel: ObservableObject {
+    @Published var searchTerm = ""
+    @Published var state: SearchLoadingState = .idle
+    
+    func loadSearch() async {
+        Task {
+            do {
+                self.state = .loading
+                let response = try await SearchService.getProducts(searchTerm: searchTerm)
+                
+                self.state = .success(products: response)
+            } catch {
+                self.state = .error(error: error)
+            }
+        }
+    }
+}
+
+extension SearchViewModel {
+    static let example = Product(id: 1, title: "iPhone", description: "brand new crazy phone", price: 1000, discountPercentage: 8.2, rating: 3.2, stock: 89, brand: "Apple", category: "phones", thumbnail: "", images: ["1", "2", "3"])
+}
