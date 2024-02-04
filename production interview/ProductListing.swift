@@ -46,7 +46,7 @@ struct ProductListing: View {
                 .padding(.bottom)
                 Button {} label: {
                     RoundedRectangle(cornerRadius: 20)
-                        .frame(height: 30)
+                        .frame(height: 40)
                         .padding(.trailing)
                         .overlay {
                             Text("Add to Cart")

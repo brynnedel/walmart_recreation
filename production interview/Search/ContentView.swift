@@ -15,58 +15,58 @@ struct ContentView: View {
     
     var body: some View {
         NavigationStack {
-            VStack (alignment: .leading) {
-                Rectangle()
+            ZStack (alignment: .top){
+                Color(.blue)
                     .frame(height: 150)
                     .ignoresSafeArea()
-                    .foregroundColor(.blue)
-                    .overlay {
-                        VStack {
-                            HStack {
-                                Button {} label: {
-                                    Image(systemName: "chevron.left")
-                                        .foregroundStyle(.white)
-                                        .fontWeight(.semibold)
-                                }
-                                
-                                RoundedRectangle(cornerRadius: 20)
-                                    .foregroundStyle(.white)
-                                    .frame(height: 40)
-                                    .overlay {
-                                        HStack {
-                                            Image(systemName: "magnifyingglass")
-                                            TextField("Search", text: $vm.searchTerm)
-                                                .onSubmit {
-                                                    Task {
-                                                        await vm.loadSearch()
-                                                    }
-                                                }
-                                            Spacer()
-                                            Image(systemName: "barcode")
+                VStack (spacing: 0){
+                    HStack (alignment: .center){
+                        Button {} label: {
+                            Image(systemName: "chevron.left")
+                                .foregroundStyle(.white)
+                                .fontWeight(.semibold)
+                                .padding(.leading)
+                        }
+                        
+                        RoundedRectangle(cornerRadius: 20)
+                            .foregroundStyle(.white)
+                            .frame(height: 40)
+                            .overlay {
+                                HStack {
+                                    Image(systemName: "magnifyingglass")
+                                    TextField("Search", text: $vm.searchTerm)
+                                        .foregroundStyle(.black)
+                                        .onSubmit {
+                                            Task {
+                                                await vm.loadSearch()
+                                            }
                                         }
-                                        .padding()
-                                    }
-                                Image(systemName: "cart")
-                                    .foregroundStyle(.white)
-                            }
-                            .padding([.horizontal, .bottom])
-                            HStack {
-                                Text("How do you want your items? | \(String(format: "%.f", zipcode))")
-                                    .foregroundStyle(.white)
-                                Spacer()
-                                Button { } label: {
-                                    Image(systemName: "chevron.down")
-                                        .foregroundStyle(.white)
-                                        .fontWeight(.semibold)
+                                    Spacer()
+                                    Image(systemName: "barcode")
                                 }
-
+                                .padding()
                             }
-                            .padding(.horizontal)
-                            Spacer()
+                        Image(systemName: "cart")
+                            .foregroundStyle(.white)
+                            .padding(.trailing)
+                    }
+                    .padding(.bottom)
+                    HStack {
+                        Text("How do you want your items? | \(String(format: "%.f", zipcode))")
+                            .foregroundStyle(.white)
+                            .padding(.leading)
+                        Spacer()
+                        Button { 
+                            //Future challenge allow to change
+                        } label: {
+                            Image(systemName: "chevron.down")
+                                .foregroundStyle(.white)
+                                .fontWeight(.semibold)
+                                .padding(.trailing)
                         }
                         
                     }
-                Section {
+                    .padding(.bottom)
                     switch vm.state {
                     case .idle:
                         EmptyView()
@@ -78,31 +78,47 @@ struct ContentView: View {
                         errorView(error)
                     }
                 }
-                Spacer()
             }
+            Spacer()
         }
     }
     
     @ViewBuilder
     private func searchResult(_ products: [Product]) -> some View {
-        Text("Results for \(vm.searchTerm)")
-        ScrollView {
-            ForEach(products) { product in
-                NavigationLink {ItemView(product: product)} label: {
-                    ProductListing(product: product)
+        VStack (alignment: .leading){
+            Text("Results for \"\(vm.searchTerm)\"")
+                .fontWeight(.bold)
+                .padding(.top)
+            ScrollView {
+                ForEach(products) { product in
+                    NavigationLink {
+                        ItemView(product: product)
+                            .environmentObject(vm)
+                            .task {
+                                await vm.loadComments()
+                            }
+                    } label: {
+                        VStack {
+                            ProductListing(product: product)
+                            Rectangle()
+                                .frame(height: 1)
+                                .foregroundStyle(.gray)
+                                .padding(.horizontal)
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
     
     @ViewBuilder
-    private var loadingView: some View {
+    public var loadingView: some View {
         Text("Loading...")
     }
     
     @ViewBuilder
-    private func errorView(_ error: Error) -> some View {
+    public func errorView(_ error: Error) -> some View {
         Text(error.localizedDescription)
     }
 }

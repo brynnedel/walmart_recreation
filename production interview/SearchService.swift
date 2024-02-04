@@ -23,7 +23,26 @@ struct SearchService {
         ]
         
         guard let url = components?.url else { fatalError("Invalid URL")}
-        print(url)
+//        print(url)
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        do {
+            let(data, _) = try await session.data(for: request)
+//            printData(data: data)
+            let response = try decoder.decode(WalmartResponse.self, from: data)
+//            print(response)
+            return response.products
+        } catch {
+            print("this is the error: \(error.localizedDescription)" )
+            throw error
+        }
+    }
+    
+    public static func getComments() async throws -> [Comment] {
+        let baseURL = "https://dummyjson.com/comments"
+        let url = URL(string: baseURL)!
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -31,11 +50,10 @@ struct SearchService {
         do {
             let(data, _) = try await session.data(for: request)
             printData(data: data)
-            let response = try decoder.decode(WalmartResponse.self, from: data)
-            print(response)
-            return response.products
+            let response = try decoder.decode(CommentResponse.self, from: data)
+            return response.comments
         } catch {
-            print("this is the error: \(error.localizedDescription)" )
+            print("this is the error: \(error.localizedDescription)")
             throw error
         }
     }

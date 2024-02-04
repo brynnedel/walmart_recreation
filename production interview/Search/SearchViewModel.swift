@@ -15,10 +15,18 @@ enum SearchLoadingState {
     case error(error: Error)
 }
 
+enum CommentLoadingState {
+    case idle
+    case loading
+    case success(comments: [Comment])
+    case error(error: Error)
+}
+
 @MainActor
 class SearchViewModel: ObservableObject {
     @Published var searchTerm = ""
     @Published var state: SearchLoadingState = .idle
+    @Published var commentState: CommentLoadingState = .idle
     
     func loadSearch() async {
         Task {
@@ -27,6 +35,18 @@ class SearchViewModel: ObservableObject {
                 let response = try await SearchService.getProducts(searchTerm: searchTerm)
                 
                 self.state = .success(products: response)
+            } catch {
+                self.state = .error(error: error)
+            }
+        }
+    }
+    
+    func loadComments() async {
+        Task {
+            do {
+                self.commentState = .loading
+                let response = try await SearchService.getComments()
+                self.commentState = .success(comments: response)
             } catch {
                 self.state = .error(error: error)
             }
